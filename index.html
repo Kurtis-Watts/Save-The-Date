@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport-fit=cover lets the page extend under the notch / home bar;
+       we then pad with safe-area insets in CSS. Pinch-zoom is deliberately NOT disabled. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#7f936d">
+  <title>Save the Date</title>
+  <meta name="description" content="Save the date — you're invited to our wedding.">
+
+  <!-- Google Fonts: Monsieur La Doulaise (script) + Cormorant Garamond (readable serif for details) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Monsieur+La+Doulaise&display=swap">
+
+  <!-- Start fetching the background straight away so it isn't discovered late via CSS -->
+  <link rel="preload" as="image" href="Assets/background-web.jpg">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Floating "firefly" motes are injected here by script.js (purely decorative) -->
+  <div class="motes" aria-hidden="true"></div>
+
+  <!-- The stage holds the whole animation. State classes are added to it by script.js:
+       is-flipped → is-opening → is-flap-open → is-letter-out -->
+  <main class="stage" id="stage">
+    <div class="scene">
+      <!-- Soft shadow on the "ground" beneath the envelope -->
+      <div class="ground" aria-hidden="true"></div>
+
+      <!-- The envelope itself: a 3D card with two faces that flips on rotateY -->
+      <div class="envelope">
+
+        <!-- ============ FRONT (address side) ============ -->
+        <div class="face front">
+          <!-- Postage stamp, top right -->
+          <svg class="stamp" viewBox="-2 -2 64 76" aria-hidden="true">
+            <path fill="#f6efdc" d="M0 0 L1.2 0 A1.8 1.8 0 0 0 4.8 0 L7.2 0 A1.8 1.8 0 0 0 10.8 0 L13.2 0 A1.8 1.8 0 0 0 16.8 0 L19.2 0 A1.8 1.8 0 0 0 22.8 0 L25.2 0 A1.8 1.8 0 0 0 28.8 0 L31.2 0 A1.8 1.8 0 0 0 34.8 0 L37.2 0 A1.8 1.8 0 0 0 40.8 0 L43.2 0 A1.8 1.8 0 0 0 46.8 0 L49.2 0 A1.8 1.8 0 0 0 52.8 0 L55.2 0 A1.8 1.8 0 0 0 58.8 0 L60 0 L60 1.2 A1.8 1.8 0 0 0 60 4.8 L60 7.2 A1.8 1.8 0 0 0 60 10.8 L60 13.2 A1.8 1.8 0 0 0 60 16.8 L60 19.2 A1.8 1.8 0 0 0 60 22.8 L60 25.2 A1.8 1.8 0 0 0 60 28.8 L60 31.2 A1.8 1.8 0 0 0 60 34.8 L60 37.2 A1.8 1.8 0 0 0 60 40.8 L60 43.2 A1.8 1.8 0 0 0 60 46.8 L60 49.2 A1.8 1.8 0 0 0 60 52.8 L60 55.2 A1.8 1.8 0 0 0 60 58.8 L60 61.2 A1.8 1.8 0 0 0 60 64.8 L60 67.2 A1.8 1.8 0 0 0 60 70.8 L60 72 L58.8 72 A1.8 1.8 0 0 0 55.2 72 L52.8 72 A1.8 1.8 0 0 0 49.2 72 L46.8 72 A1.8 1.8 0 0 0 43.2 72 L40.8 72 A1.8 1.8 0 0 0 37.2 72 L34.8 72 A1.8 1.8 0 0 0 31.2 72 L28.8 72 A1.8 1.8 0 0 0 25.2 72 L22.8 72 A1.8 1.8 0 0 0 19.2 72 L16.8 72 A1.8 1.8 0 0 0 13.2 72 L10.8 72 A1.8 1.8 0 0 0 7.2 72 L4.8 72 A1.8 1.8 0 0 0 1.2 72 L0 72 L0 70.8 A1.8 1.8 0 0 0 0 67.2 L0 64.8 A1.8 1.8 0 0 0 0 61.2 L0 58.8 A1.8 1.8 0 0 0 0 55.2 L0 52.8 A1.8 1.8 0 0 0 0 49.2 L0 46.8 A1.8 1.8 0 0 0 0 43.2 L0 40.8 A1.8 1.8 0 0 0 0 37.2 L0 34.8 A1.8 1.8 0 0 0 0 31.2 L0 28.8 A1.8 1.8 0 0 0 0 25.2 L0 22.8 A1.8 1.8 0 0 0 0 19.2 L0 16.8 A1.8 1.8 0 0 0 0 13.2 L0 10.8 A1.8 1.8 0 0 0 0 7.2 L0 4.8 A1.8 1.8 0 0 0 0 1.2 Z"/>
+            <!-- stamp artwork: a little garden rose on a sage ground -->
+            <rect x="6" y="6" width="48" height="60" fill="#a9bb98" stroke="#6f805f" stroke-width="0.8"/>
+            <path d="M30 62 C30 50 31 44 30 36" stroke="#55664a" stroke-width="1.4" fill="none"/>
+            <path d="M30 50 C24 48 20 44 19 39 C25 40 29 44 30 50Z" fill="#6f805f"/>
+            <path d="M30 46 C36 44 40 40 41 35 C35 36 31 40 30 46Z" fill="#6f805f"/>
+            <circle cx="30" cy="27" r="9" fill="#e8b9ad"/>
+            <circle cx="30" cy="27" r="6" fill="#d99a8c"/>
+            <path d="M26 27 C26 23 34 23 34 27 C34 30 28 31 28 28" stroke="#b9776a" stroke-width="1" fill="none"/>
+            <text x="30" y="14" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="6" fill="#3e4c38" letter-spacing="0.8">LOVE</text>
+          </svg>
+
+          <!-- Faded postmark overlapping the stamp -->
+          <svg class="postmark" viewBox="0 0 120 60" aria-hidden="true">
+            <defs><path id="pm-arc" d="M40 30 m-17 0 a17 17 0 1 1 34 0 a17 17 0 1 1 -34 0"/></defs>
+            <g fill="none" stroke="currentColor" stroke-width="1.2">
+              <circle cx="40" cy="30" r="22"/>
+              <circle cx="40" cy="30" r="12"/>
+              <path d="M66 18 q9 -5 18 0 t18 0 t18 0"/>
+              <path d="M66 30 q9 -5 18 0 t18 0 t18 0"/>
+              <path d="M66 42 q9 -5 18 0 t18 0 t18 0"/>
+            </g>
+            <text font-family="Cormorant Garamond, serif" font-size="6.4" fill="currentColor" letter-spacing="1.2">
+              <textPath href="#pm-arc">WITH LOVE · FROM THE GARDEN ·</textPath>
+            </text>
+          </svg>
+
+          <div class="front-text">
+            <p class="front-script">Save the Date</p>
+            <p class="front-sub">for our dearest family &amp; friends</p>
+          </div>
+
+          <!-- Full-size invisible button: the whole front is tappable and keyboard operable -->
+          <button class="hit" type="button" id="flipBtn"
+                  aria-label="Turn the envelope over"></button>
+        </div>
+
+        <!-- ============ BACK (flap side) ============ -->
+        <!-- The back is NOT a nested 3D context (transform-style stays flat) – the flap's
+             rotateX is flattened onto this face. That avoids Safari flicker from nested
+             preserve-3d inside a flipping card. Layer order is controlled by z-index. -->
+        <div class="face back" id="back">
+
+          <!-- The letter: outer wrapper does the "settle forward" move, the inner card
+               does the "slide up out of the pocket" move. -->
+          <div class="letter" id="letter" aria-hidden="true">
+            <article class="letter-card" id="letterCard" tabindex="-1" aria-label="Save the date details">
+              <p class="eyebrow">Save the Date</p>
+              <h1 class="names">Names</h1>
+              <!-- small botanical divider -->
+              <svg class="sprig" viewBox="0 0 120 16" aria-hidden="true">
+                <g fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round">
+                  <path d="M6 8 H50"/><path d="M70 8 H114"/>
+                  <path d="M60 3 C56 6 56 10 60 13 C64 10 64 6 60 3Z"/>
+                  <path d="M52 8 C49 5 45 5 43 6 C45 9 49 10 52 8Z"/>
+                  <path d="M68 8 C71 5 75 5 77 6 C75 9 71 10 68 8Z"/>
+                </g>
+              </svg>
+              <p class="date">Date</p>
+              <p class="location">Location</p>
+              <p class="extra">Extra</p>
+            </article>
+          </div>
+
+          <!-- Pocket: the two side folds + bottom fold that hold the letter -->
+          <svg class="pocket" viewBox="0 0 100 70" aria-hidden="true">
+            <defs>
+              <linearGradient id="g-side-l" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#a4b691"/><stop offset="1" stop-color="#b6c5a4"/>
+              </linearGradient>
+              <linearGradient id="g-side-r" x1="1" y1="0" x2="0" y2="0">
+                <stop offset="0" stop-color="#a4b691"/><stop offset="1" stop-color="#b6c5a4"/>
+              </linearGradient>
+              <linearGradient id="g-bottom" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0" stop-color="#b0c09d"/><stop offset="1" stop-color="#c3d0b3"/>
+              </linearGradient>
+            </defs>
+            <polygon points="0,0 52,38 0,70" fill="url(#g-side-l)"/>
+            <polygon points="100,0 48,38 100,70" fill="url(#g-side-r)"/>
+            <polygon points="0,70 50,33 100,70" fill="url(#g-bottom)"/>
+            <!-- fold creases: a dark line with a paper highlight just beside it -->
+            <g fill="none" stroke-linecap="round">
+              <path d="M0 70 L50 33 L100 70" stroke="rgba(70,90,55,.35)" stroke-width=".5"/>
+              <path d="M1 69.6 L50 33.8 L99 69.6" stroke="rgba(255,255,245,.45)" stroke-width=".35"/>
+              <path d="M0 0 L50 37" stroke="rgba(70,90,55,.22)" stroke-width=".4"/>
+              <path d="M100 0 L50 37" stroke="rgba(70,90,55,.22)" stroke-width=".4"/>
+            </g>
+          </svg>
+
+          <!-- Top flap, hinged along the top edge. Two artworks are stacked: the outside
+               (seen when closed) and the patterned liner (seen once it swings past 90°). -->
+          <div class="flap" aria-hidden="true">
+            <svg class="flap-outer" viewBox="0 0 100 40" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="g-flap" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#c6d2b6"/><stop offset="1" stop-color="#b3c3a1"/>
+                </linearGradient>
+                <filter id="f-soft" x="-10%" y="-10%" width="120%" height="140%">
+                  <feGaussianBlur stdDeviation="1.1"/>
+                </filter>
+              </defs>
+              <!-- soft shadow the closed flap casts onto the pocket -->
+              <path d="M0 0 L100 0 L54 38.6 Q50 41.6 46 38.6 Z" fill="rgba(45,60,35,.35)" transform="translate(0 1.4)" filter="url(#f-soft)"/>
+              <path d="M0 0 L100 0 L53.6 37.6 Q50 40.4 46.4 37.6 Z" fill="url(#g-flap)"/>
+              <path d="M0.6 0.3 L46.6 37.3 Q50 40 53.4 37.3 L99.4 0.3" fill="none" stroke="rgba(255,255,245,.5)" stroke-width=".35"/>
+            </svg>
+            <svg class="flap-inner" viewBox="0 0 100 40" preserveAspectRatio="none">
+              <defs>
+                <!-- the floral liner pattern also used for the envelope interior (see CSS) -->
+                <pattern id="p-liner" width="10" height="10" patternUnits="userSpaceOnUse">
+                  <rect width="10" height="10" fill="#8fa27c"/>
+                  <path d="M5 2 C3.6 3.4 3.6 5 5 6.4 C6.4 5 6.4 3.4 5 2Z" fill="rgba(251,247,236,.28)"/>
+                  <circle cx="0" cy="8.5" r=".7" fill="rgba(236,212,154,.45)"/>
+                  <circle cx="10" cy="8.5" r=".7" fill="rgba(236,212,154,.45)"/>
+                </pattern>
+              </defs>
+              <path d="M0 0 L100 0 L53.6 37.6 Q50 40.4 46.4 37.6 Z" fill="url(#p-liner)"/>
+            </svg>
+          </div>
+
+          <!-- Brass wax seal: the button you tap to open -->
+          <button class="seal" type="button" id="sealBtn" aria-label="Break the wax seal and open the envelope">
+            <span class="seal-inner">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <defs>
+                  <radialGradient id="g-brass" cx="35%" cy="30%" r="75%">
+                    <stop offset="0" stop-color="#f3dfa6"/>
+                    <stop offset=".35" stop-color="#cfa865"/>
+                    <stop offset=".75" stop-color="#9c7535"/>
+                    <stop offset="1" stop-color="#6e5122"/>
+                  </radialGradient>
+                  <radialGradient id="g-brass-pressed" cx="65%" cy="70%" r="80%">
+                    <stop offset="0" stop-color="#e2c584"/>
+                    <stop offset=".6" stop-color="#b38c4b"/>
+                    <stop offset="1" stop-color="#7f5f2a"/>
+                  </radialGradient>
+                  <filter id="f-seal-shadow" x="-20%" y="-20%" width="140%" height="150%">
+                    <feGaussianBlur in="SourceAlpha" stdDeviation="2.2"/>
+                    <feOffset dy="2.5" result="b"/>
+                    <feComponentTransfer><feFuncA type="linear" slope=".45"/></feComponentTransfer>
+                    <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                </defs>
+                <!-- irregular blob of poured wax -->
+                <path filter="url(#f-seal-shadow)" fill="url(#g-brass)" d="M94.0 50.0C93.5 56.5 91.5 62.8 88.9 68.7C86.3 74.7 83.4 81.9 78.5 85.7C73.6 89.5 65.9 90.3 59.5 91.7C53.1 93.1 46.2 95.1 40.0 93.9C33.8 92.8 27.2 88.8 22.4 84.6C17.7 80.3 14.4 74.3 11.5 68.5C8.6 62.8 5.0 56.2 5.1 50.0C5.1 43.8 8.8 37.3 11.6 31.5C14.5 25.7 17.4 19.0 22.2 15.2C27.0 11.3 34.3 9.5 40.5 8.3C46.7 7.2 53.3 7.1 59.5 8.2C65.7 9.4 72.4 11.6 77.8 15.2C83.2 18.8 89.2 24.0 91.9 29.8C94.6 35.6 94.5 43.5 94.0 50.0Z"/>
+                <!-- pressed-in centre with embossed rim (light bottom-right, dark top-left) -->
+                <circle cx="50" cy="50" r="31" fill="url(#g-brass-pressed)"/>
+                <circle cx="50.6" cy="50.8" r="31" fill="none" stroke="rgba(255,240,200,.55)" stroke-width="1.3"/>
+                <circle cx="49.4" cy="49.2" r="31" fill="none" stroke="rgba(90,62,20,.55)" stroke-width="1.3"/>
+                <!-- ring of tiny leaves -->
+                <g fill="#8a6a30" opacity=".75">
+                  <ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(0 50 50) rotate(35 50 13.5)"/><ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(20 50 50) rotate(35 50 13.5)"/><ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(40 50 50) rotate(35 50 13.5)"/><ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(60 50 50) rotate(35 50 13.5)"/><ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(80 50 50) rotate(35 50 13.5)"/><ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(100 50 50) rotate(35 50 13.5)"/><ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(120 50 50) rotate(35 50 13.5)"/><ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(140 50 50) rotate(35 50 13.5)"/><ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(160 50 50) rotate(35 50 13.5)"/><ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(180 50 50) rotate(35 50 13.5)"/><ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(200 50 50) rotate(35 50 13.5)"/><ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(220 50 50) rotate(35 50 13.5)"/><ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(240 50 50) rotate(35 50 13.5)"/><ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(260 50 50) rotate(35 50 13.5)"/><ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(280 50 50) rotate(35 50 13.5)"/><ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(300 50 50) rotate(35 50 13.5)"/><ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(320 50 50) rotate(35 50 13.5)"/><ellipse cx="50" cy="13.5" rx="1.6" ry="3.4" transform="rotate(340 50 50) rotate(35 50 13.5)"/>
+                </g>
+                <!-- pressed flower motif (swap for initials later if you like:
+                     replace this <g> with <text> in the same colours) -->
+                <g transform="translate(50 49)">
+                  <g fill="none" stroke="rgba(255,238,195,.6)" stroke-width="1.6" transform="translate(.7 .9)">
+                    <path d="M0 4 C0 12 -1 17 -3 22"/>
+                    <path d="M-1 15 C-7 13 -10 9 -11 5 C-6 6 -3 10 -1 15Z"/>
+                  </g>
+                  <g fill="none" stroke="#6b4f22" stroke-width="1.6" stroke-linecap="round">
+                    <path d="M0 4 C0 12 -1 17 -3 22"/>
+                    <path d="M-1 15 C-7 13 -10 9 -11 5 C-6 6 -3 10 -1 15Z"/>
+                  </g>
+                  <g fill="#8a6a30" stroke="#6b4f22" stroke-width="1">
+                    <ellipse cx="0" cy="-9" rx="4.2" ry="6.5"/>
+                    <ellipse cx="0" cy="-9" rx="4.2" ry="6.5" transform="rotate(72 0 -2)"/>
+                    <ellipse cx="0" cy="-9" rx="4.2" ry="6.5" transform="rotate(144 0 -2)"/>
+                    <ellipse cx="0" cy="-9" rx="4.2" ry="6.5" transform="rotate(216 0 -2)"/>
+                    <ellipse cx="0" cy="-9" rx="4.2" ry="6.5" transform="rotate(288 0 -2)"/>
+                  </g>
+                  <circle cx="0" cy="-2" r="3.2" fill="#e2c584" stroke="#6b4f22" stroke-width="1"/>
+                </g>
+              </svg>
+            </span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Gentle instruction at the bottom of the screen; text updated by script.js.
+       aria-live lets screen-reader users hear each new step. -->
+  <p class="hint" id="hint" aria-live="polite">Tap the envelope to open</p>
+
+  <!-- If JavaScript is unavailable, still show the details -->
+  <noscript>
+    <style>.stage, .hint { display: none; }</style>
+    <div class="noscript-card">
+      <p class="eyebrow">Save the Date</p>
+      <p class="names">Names</p>
+      <p class="date">Date</p>
+      <p class="location">Location</p>
+      <p class="extra">Extra</p>
+    </div>
+  </noscript>
+
+  <script src="script.js"></script>
+</body>
+</html>

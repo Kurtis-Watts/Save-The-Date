@@ -1,0 +1,597 @@
+/* ==========================================================================
+   Save the Date — styles
+   Plain CSS, mobile first. Sections:
+     1. Design tokens (colours, sizes, timings)
+     2. Page lock (single screen, no scroll) + background
+     3. Stage / scene layout
+     4. Envelope 3D flip (front + back faces)
+     5. Front face artwork
+     6. Back face: interior, letter, pocket, flap, seal
+     7. Open sequence states
+     8. Hint, motes, focus styles, noscript
+     9. Reduced motion
+   ========================================================================== */
+
+
+/* 1. DESIGN TOKENS ======================================================== */
+:root {
+  /* Palette — sage/willow envelope, brass seal, cream paper */
+  --sage-100: #d3dcc6;
+  --sage-200: #c2cfb1;
+  --sage-300: #aebf9b;
+  --sage-500: #7f936d;
+  --sage-700: #55664a;
+  --ink:      #3e4c38;   /* deep garden green used for text */
+  --paper:    #fbf7ec;
+  --brass:    #b8914f;
+  --brass-dk: #7a5a26;
+
+  --font-script: "Monsieur La Doulaise", "Snell Roundhand", "Apple Chancery", cursive;
+  --font-serif:  "Cormorant Garamond", "Garamond", "Georgia", serif;
+
+  /* Usable screen height. 100dvh tracks the real visible area on mobile
+     (excludes Safari/Chrome toolbars). Older browsers fall back to 100vh,
+     and script.js sets a pixel value if dvh isn't supported. */
+  --app-h: 100vh;
+
+  /* Envelope width. The smallest of:
+       - 88% of the screen width
+       - 420px (so it doesn't get silly on desktop)
+       - what fits vertically once the letter is out (the open state is
+         roughly 1.3 × the width tall, plus ~110px for the hint and padding) */
+  --w: min(88vw, 420px, calc((var(--app-h) - 110px) / 1.3));
+  --h: calc(var(--w) * 0.7);      /* envelope is 10:7 */
+
+  /* Animation timings. ALWAYS in ms — script.js reads these to sequence
+     the steps, so there's only one place to tweak the pacing. */
+  --dur-flip:      1000ms;  /* envelope turning over */
+  --dur-flip-half: 500ms;   /* moment the envelope is edge-on (faces swap) */
+  --dur-seal:      380ms;   /* seal breaking/fading */
+  --delay-flap:    220ms;   /* flap waits for the seal to start breaking */
+  --dur-flap:      800ms;   /* flap swinging open */
+  --flap-swap:     620ms;   /* delay-flap + half of dur-flap: flap is edge-on */
+  --dur-rise:      1000ms;  /* letter sliding up out of the pocket */
+  --dur-settle:    850ms;   /* letter coming forward and resting */
+  --dur-shift:     1200ms;  /* whole scene easing down to make room */
+}
+
+/* Prefer dvh where supported */
+@supports (height: 100dvh) {
+  :root { --app-h: 100dvh; }
+}
+
+
+/* 2. PAGE LOCK + BACKGROUND =============================================== */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;              /* no page scroll */
+  overscroll-behavior: none;     /* no pull-to-refresh / rubber banding */
+}
+
+body {
+  /* position: fixed stops the rubber-band bounce on older iOS that
+     ignores overscroll-behavior. Pinch-zoom still works. */
+  position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;
+  height: var(--app-h);
+  font-family: var(--font-serif);
+  color: var(--ink);
+  background: #a3ae92 url("Assets/background-web.jpg") 50% 50% / cover no-repeat;
+  touch-action: manipulation;    /* removes the double-tap-to-zoom delay, keeps pinch */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Dreamy haze: soft light in the middle, gentle vignette at the edges */
+body::before {
+  content: "";
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 45%, rgba(255, 252, 240, .38), rgba(255, 252, 240, 0) 70%),
+    linear-gradient(to bottom, rgba(240, 245, 235, .18), rgba(30, 40, 25, .28));
+}
+
+p, h1 { margin: 0; }
+
+
+/* 3. STAGE / SCENE LAYOUT ================================================= */
+.stage {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* keep clear of the notch/home bar, and leave room for the hint at the bottom */
+  padding:
+    calc(env(safe-area-inset-top, 0px) + 16px)
+    calc(env(safe-area-inset-right, 0px) + 12px)
+    calc(env(safe-area-inset-bottom, 0px) + 72px)
+    calc(env(safe-area-inset-left, 0px) + 12px);
+}
+
+/* The scene owns the 3D perspective for the flip */
+.scene {
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  -webkit-perspective: 1400px;
+  perspective: 1400px;
+  transition: transform var(--dur-shift) cubic-bezier(.45, 0, .25, 1);
+}
+
+/* Shadow on the ground beneath the envelope */
+.ground {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -9%;
+  height: 14%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(25, 35, 20, .45), rgba(25, 35, 20, 0) 70%);
+  pointer-events: none;
+}
+
+
+/* 4. ENVELOPE 3D FLIP ===================================================== */
+.envelope {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  -webkit-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+  transition: transform var(--dur-flip) cubic-bezier(.45, .05, .25, 1);
+  will-change: transform;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.face {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  box-shadow: 0 10px 26px rgba(30, 40, 25, .28), 0 2px 5px rgba(30, 40, 25, .18);
+}
+
+/* translateZ(1px) pushes the two faces apart so Safari never has to decide
+   which of two coplanar faces is on top (a classic source of flicker). */
+.front {
+  -webkit-transform: rotateY(0deg) translateZ(1px);
+  transform: rotateY(0deg) translateZ(1px);
+  /* Belt and braces with backface-visibility: hide the front once the
+     envelope is edge-on. Safari can leak children of a hidden backface. */
+  transition: visibility 0s linear var(--dur-flip-half);
+}
+
+.back {
+  -webkit-transform: rotateY(180deg) translateZ(1px);
+  transform: rotateY(180deg) translateZ(1px);
+  visibility: hidden;
+  transition: visibility 0s linear var(--dur-flip-half);
+}
+
+.is-flipped .envelope { transform: rotateY(180deg); }
+.is-flipped .front    { visibility: hidden; }
+.is-flipped .back     { visibility: visible; }
+
+/* Ground shadow shrinks as the envelope lifts to turn over */
+.is-flipped .ground { animation: ground-flip var(--dur-flip) ease-in-out; }
+@keyframes ground-flip {
+  50% { transform: scaleX(.55); opacity: .45; }
+}
+
+
+/* 5. FRONT FACE ARTWORK =================================================== */
+/* Very fine paper grain comes from an inline SVG noise filter (data URI) */
+.front {
+  background-color: var(--sage-200);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .35 0 0 0 0 .25 0 0 0 .1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    linear-gradient(160deg, #d0dac3 0%, #bccaab 55%, #adbe9b 100%);
+}
+
+.stamp {
+  position: absolute;
+  top: 7%;
+  right: 6%;
+  width: 15%;
+  transform: rotate(3deg);
+}
+
+.postmark {
+  position: absolute;
+  top: 9%;
+  right: 13%;
+  width: 34%;
+  color: rgba(62, 76, 56, .38);
+  transform: rotate(-8deg);
+}
+
+.front-text {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 40%;
+  text-align: center;
+}
+
+.front-script {
+  font-family: var(--font-script);
+  font-size: calc(var(--w) * .15);
+  line-height: 1.05;
+  color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 245, .35);
+}
+
+.front-sub {
+  margin-top: .5em;
+  font-size: max(13px, calc(var(--w) * .043));
+  font-style: italic;
+  letter-spacing: .04em;
+  color: var(--sage-700);
+}
+
+/* Invisible full-face button: the tap target for flipping */
+.hit {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+
+/* 6. BACK FACE ============================================================ */
+.back {
+  /* What you see inside the envelope: the floral liner, a little darker at
+     the top where the flap shades it. Tile = 10% of the envelope width so it
+     matches the liner printed on the inside of the flap. */
+  background-color: #8fa27c;
+  background-image:
+    linear-gradient(to bottom, rgba(40, 55, 30, .35), rgba(40, 55, 30, 0) 45%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 10 10'%3E%3Crect width='10' height='10' fill='%238fa27c'/%3E%3Cpath d='M5 2C3.6 3.4 3.6 5 5 6.4C6.4 5 6.4 3.4 5 2Z' fill='rgba(251,247,236,.28)'/%3E%3Ccircle cx='0' cy='8.5' r='.7' fill='rgba(236,212,154,.45)'/%3E%3Ccircle cx='10' cy='8.5' r='.7' fill='rgba(236,212,154,.45)'/%3E%3C/svg%3E");
+  background-size: auto, calc(var(--w) * .1) calc(var(--w) * .1);
+  /* Perspective for the flap's rotateX. The back stays transform-style: flat,
+     so the flap is drawn in 3D and then flattened onto this face — no nested
+     3D context for Safari to flicker over. */
+  -webkit-perspective: 900px;
+  perspective: 900px;
+  cursor: pointer;
+}
+
+/* --- Letter --------------------------------------------------------------- */
+/* Stacking inside the back face (low → high):
+     interior bg → open flap (2) → letter (3) → pocket (4) → closed flap (5) → seal (6)
+   Once the letter is out it jumps to 7, in front of everything. */
+.letter {
+  position: absolute;
+  top: 4%;
+  left: 4%;
+  width: 92%;
+  height: 92%;
+  z-index: 3;
+  /* step 2: comes forward and settles down in front of the envelope */
+  transition: transform var(--dur-settle) cubic-bezier(.3, 1.15, .45, 1);
+}
+
+.letter-card {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5% 7%;
+  text-align: center;
+  background-color: var(--paper);
+  /* same paper grain as the envelope, plus a faint warm vignette */
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .35 0 0 0 0 .25 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at center, rgba(251, 247, 236, 0) 55%, rgba(226, 210, 172, .45) 100%);
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(30, 40, 25, .2);
+  outline: none;
+  /* step 1: slides up out of the pocket */
+  transition:
+    transform var(--dur-rise) cubic-bezier(.45, 0, .3, 1),
+    box-shadow var(--dur-settle) ease;
+}
+
+/* Thin brass border inset from the card edge */
+.letter-card::before {
+  content: "";
+  position: absolute;
+  top: 5px; right: 5px; bottom: 5px; left: 5px;
+  border: 1px solid rgba(184, 145, 79, .55);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+/* Letter typography — sizes scale with the envelope so it always fits */
+.eyebrow {
+  font-size: max(10px, calc(var(--w) * .034));
+  font-weight: 600;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--brass-dk);
+  padding-left: .28em;          /* balances the trailing letter-spacing */
+}
+
+.names {
+  margin: .22em 0 0;
+  font-family: var(--font-script);
+  font-weight: normal;
+  font-size: calc(var(--w) * .15);
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.sprig {
+  display: block;
+  width: 36%;
+  margin: .1em auto .35em;
+  color: var(--brass);
+}
+
+.date {
+  font-size: max(14px, calc(var(--w) * .056));
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  padding-left: .12em;
+}
+
+.location {
+  margin-top: .25em;
+  font-size: max(13px, calc(var(--w) * .046));
+  font-style: italic;
+}
+
+.extra {
+  margin-top: .45em;
+  font-size: max(12px, calc(var(--w) * .04));
+  color: var(--sage-700);
+}
+
+/* --- Pocket ---------------------------------------------------------------- */
+.pocket {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 4;
+}
+
+/* --- Flap ------------------------------------------------------------------ */
+.flap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 57.142857%;           /* 40 / 70 of the envelope height */
+  z-index: 5;
+  transform-origin: 50% 0;      /* hinged along the top edge */
+  transition: transform var(--dur-flap) cubic-bezier(.4, 0, .2, 1) var(--delay-flap);
+  will-change: transform;
+}
+
+.flap svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;            /* lets the soft shadow spill onto the pocket */
+}
+
+/* The liner side is hidden until the flap passes edge-on, then the two swap.
+   (Opacity swap instead of backface-visibility = no nested 3D context.) */
+.flap-inner { opacity: 0; }
+
+/* --- Seal ------------------------------------------------------------------ */
+.seal {
+  position: absolute;
+  left: 50%;
+  top: 55%;                     /* sits on the tip of the flap */
+  z-index: 6;
+  width: calc(var(--w) * .21);
+  height: calc(var(--w) * .21);
+  min-width: 56px;              /* comfortable tap target on small screens */
+  min-height: 56px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  transition:
+    opacity var(--dur-seal) ease,
+    transform var(--dur-seal) ease;
+}
+
+.seal-inner {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  display: block;
+}
+
+.seal svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Gentle "breathing" on the seal to invite a tap, once the back is showing */
+.is-flipped:not(.is-opening) .seal-inner {
+  animation: seal-pulse 2.6s ease-in-out var(--dur-flip) infinite;
+}
+@keyframes seal-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
+}
+
+
+/* 7. OPEN SEQUENCE STATES ================================================= */
+/* script.js adds these classes to .stage in order. */
+
+/* Seal tapped: seal breaks away, flap swings open, scene eases down
+   to make room for the letter above the envelope. */
+.is-opening .scene { transform: translateY(calc(var(--h) * .3)); }
+
+.is-opening .seal {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(1.25) rotate(-8deg);
+  pointer-events: none;
+}
+
+.is-opening .flap { transform: rotateX(180deg); }
+
+.is-opening .flap-outer {
+  opacity: 0;
+  transition: opacity 0s linear var(--flap-swap);
+}
+.is-opening .flap-inner {
+  opacity: 1;
+  transition: opacity 0s linear var(--flap-swap);
+}
+
+/* Flap fully open: tuck it behind the letter, and slide the letter up */
+.is-flap-open .flap { z-index: 2; }
+.is-flap-open .letter-card { transform: translateY(-88%); }
+
+/* Letter clear of the pocket: bring it in front and let it settle */
+.is-letter-out .letter { z-index: 7; transform: translateY(40%); }
+.is-letter-out .letter-card {
+  box-shadow: 0 14px 30px rgba(30, 40, 25, .32), 0 3px 8px rgba(30, 40, 25, .2);
+}
+.is-letter-out .back { cursor: default; }
+
+
+/* 8. HINT, MOTES, FOCUS, NOSCRIPT ========================================= */
+.hint {
+  position: absolute;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  padding: 8px 20px;
+  border-radius: 999px;
+  background: rgba(251, 247, 236, .8);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 2px 10px rgba(30, 40, 25, .18);
+  font-size: 18px;
+  font-style: italic;
+  white-space: nowrap;
+  color: var(--ink);
+  pointer-events: none;
+  transition: opacity 400ms ease;
+  animation: hint-breathe 3s ease-in-out infinite;
+}
+.hint.is-hidden { opacity: 0; animation: none; }
+@keyframes hint-breathe {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .72; }
+}
+
+/* Floating firefly motes (created by script.js) */
+.motes {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.mote {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 249, 220, .95) 0%, rgba(255, 238, 180, .5) 35%, rgba(255, 238, 180, 0) 70%);
+  opacity: 0;
+  animation: drift-a 14s ease-in-out infinite;
+}
+.mote.b { animation-name: drift-b; }
+.mote.c { animation-name: drift-c; }
+@keyframes drift-a {
+  0%   { opacity: 0;  transform: translate(0, 0); }
+  25%  { opacity: .9; }
+  50%  { transform: translate(18px, -40px); }
+  75%  { opacity: .7; }
+  100% { opacity: 0;  transform: translate(-10px, -80px); }
+}
+@keyframes drift-b {
+  0%   { opacity: 0;  transform: translate(0, 0) scale(.8); }
+  30%  { opacity: .8; }
+  60%  { transform: translate(-24px, -30px) scale(1.1); }
+  100% { opacity: 0;  transform: translate(10px, -70px) scale(.8); }
+}
+@keyframes drift-c {
+  0%   { opacity: 0;  transform: translate(0, 0); }
+  40%  { opacity: 1; }
+  70%  { transform: translate(30px, -20px); }
+  100% { opacity: 0;  transform: translate(40px, -60px); }
+}
+
+/* Tap highlight off, no double-tap zoom delay on every tappable thing */
+.hit, .seal, .back {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Keyboard focus ring (only for keyboard users, not after a tap) */
+.hit:focus, .seal:focus { outline: none; }
+.hit:focus-visible  { outline: 3px solid var(--paper); outline-offset: -8px; }
+.seal:focus-visible { outline: 3px solid var(--paper); outline-offset: 4px; }
+
+/* Shown only when JavaScript is turned off */
+.noscript-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(88vw, 420px);
+  padding: 32px 24px;
+  text-align: center;
+  background: var(--paper);
+  box-shadow: 0 14px 30px rgba(30, 40, 25, .32);
+}
+.noscript-card .names { font-size: 48px; }
+.noscript-card .date  { font-size: 20px; }
+.noscript-card .location { font-size: 18px; }
+.noscript-card .extra { font-size: 16px; }
+
+
+/* 9. REDUCED MOTION ======================================================= */
+/* Everything still works, but each step happens instantly instead of
+   animating; decorative movement is switched off. script.js reads these
+   0ms values, so its timers collapse too. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-flip: 0ms;
+    --dur-flip-half: 0ms;
+    --dur-seal: 0ms;
+    --delay-flap: 0ms;
+    --dur-flap: 0ms;
+    --flap-swap: 0ms;
+    --dur-rise: 0ms;
+    --dur-settle: 0ms;
+    --dur-shift: 0ms;
+  }
+  .motes { display: none; }
+  .hint, .is-flipped .ground, .is-flipped:not(.is-opening) .seal-inner { animation: none; }
+}
