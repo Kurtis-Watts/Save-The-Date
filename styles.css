@@ -15,16 +15,21 @@
 
 /* 1. DESIGN TOKENS ======================================================== */
 :root {
-  /* Palette — sage/willow envelope, brass seal, cream paper */
-  --sage-100: #d3dcc6;
-  --sage-200: #c2cfb1;
-  --sage-300: #aebf9b;
-  --sage-500: #7f936d;
-  --sage-700: #55664a;
-  --ink:      #3e4c38;   /* deep garden green used for text */
-  --paper:    #fbf7ec;
-  --brass:    #b8914f;
-  --brass-dk: #7a5a26;
+  /* Palette — from References/colour-reference.jpg */
+  --avocado:  #84a683;   /* envelope: the one colour to change. The shades below are
+                            tuned by eye to go with it (SVG shading reads them too). */
+  --env-light: #92b391;
+  --env-dark:  #759772;
+  --env-side-a: #6b8d69;  /* pocket side folds, edge → centre */
+  --env-side-b: #769876;
+  --env-bottom-a: #719370;  /* pocket bottom fold, edge → centre */
+  --env-bottom-b: #80a27f;
+  --env-flap-a: #92b391;  /* top flap, tip → hinge uses --env-side-b */
+  --olive:    #45441a;   /* letter body text */
+  --dk-green: #282c15;   /* names */
+  --cream:    #e5deca;
+  --paper:    #f8f4e8;   /* letter card: a lighter cream so text stays crisp */
+  --accent:   #7a7530;   /* small caps + divider on the letter */
 
   --font-script: "Monsieur La Doulaise", "Snell Roundhand", "Apple Chancery", cursive;
   --font-serif:  "Cormorant Garamond", "Garamond", "Georgia", serif;
@@ -37,9 +42,9 @@
   /* Envelope width. The smallest of:
        - 88% of the screen width
        - 420px (so it doesn't get silly on desktop)
-       - what fits vertically once the letter is out (the open state is
-         roughly 1.3 × the width tall, plus ~110px for the hint and padding) */
-  --w: min(88vw, 420px, calc((var(--app-h) - 110px) / 1.3));
+       - what fits vertically while the letter is lifted fully clear of the
+         envelope (roughly 1.75 × the width tall, plus padding) */
+  --w: min(88vw, 420px, calc((var(--app-h) - 70px) / 1.75));
   --h: calc(var(--w) * 0.7);      /* envelope is 10:7 */
 
   /* Animation timings. ALWAYS in ms — script.js reads these to sequence
@@ -50,8 +55,8 @@
   --delay-flap:    220ms;   /* flap waits for the seal to start breaking */
   --dur-flap:      800ms;   /* flap swinging open */
   --flap-swap:     620ms;   /* delay-flap + half of dur-flap: flap is edge-on */
-  --dur-rise:      1000ms;  /* letter sliding up out of the pocket */
-  --dur-settle:    850ms;   /* letter coming forward and resting */
+  --dur-rise:      1100ms;  /* letter sliding up, all the way out of the pocket */
+  --dur-settle:    900ms;   /* letter coming forward and resting */
   --dur-shift:     1200ms;  /* whole scene easing down to make room */
 }
 
@@ -78,8 +83,8 @@ body {
   top: 0; right: 0; bottom: 0; left: 0;
   height: var(--app-h);
   font-family: var(--font-serif);
-  color: var(--ink);
-  background: #a3ae92 url("Assets/background-web.jpg") 50% 50% / cover no-repeat;
+  color: var(--olive);
+  background: #8d9470 url("Assets/background-web.jpg") 50% 50% / cover no-repeat;
   touch-action: manipulation;    /* removes the double-tap-to-zoom delay, keeps pinch */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -132,7 +137,7 @@ p, h1 { margin: 0; }
   bottom: -9%;
   height: 14%;
   border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(25, 35, 20, .45), rgba(25, 35, 20, 0) 70%);
+  background: radial-gradient(ellipse at center, rgba(15, 25, 12, .65), rgba(15, 25, 12, 0) 72%);
   pointer-events: none;
 }
 
@@ -155,29 +160,24 @@ p, h1 { margin: 0; }
   top: 0; right: 0; bottom: 0; left: 0;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  box-shadow: 0 10px 26px rgba(30, 40, 25, .28), 0 2px 5px rgba(30, 40, 25, .18);
+  box-shadow: 0 16px 36px rgba(20, 30, 18, .5), 0 4px 10px rgba(20, 30, 18, .35);
 }
 
 /* translateZ(1px) pushes the two faces apart so Safari never has to decide
-   which of two coplanar faces is on top (a classic source of flicker). */
+   which of two coplanar faces is on top (a classic source of flicker).
+   Hiding the far side relies on backface-visibility alone: toggling
+   `visibility` mid-flip made the envelope vanish on some devices. */
 .front {
   -webkit-transform: rotateY(0deg) translateZ(1px);
   transform: rotateY(0deg) translateZ(1px);
-  /* Belt and braces with backface-visibility: hide the front once the
-     envelope is edge-on. Safari can leak children of a hidden backface. */
-  transition: visibility 0s linear var(--dur-flip-half);
 }
 
 .back {
   -webkit-transform: rotateY(180deg) translateZ(1px);
   transform: rotateY(180deg) translateZ(1px);
-  visibility: hidden;
-  transition: visibility 0s linear var(--dur-flip-half);
 }
 
 .is-flipped .envelope { transform: rotateY(180deg); }
-.is-flipped .front    { visibility: hidden; }
-.is-flipped .back     { visibility: visible; }
 
 /* Ground shadow shrinks as the envelope lifts to turn over */
 .is-flipped .ground { animation: ground-flip var(--dur-flip) ease-in-out; }
@@ -187,53 +187,32 @@ p, h1 { margin: 0; }
 
 
 /* 5. FRONT FACE ARTWORK =================================================== */
-/* Very fine paper grain comes from an inline SVG noise filter (data URI) */
+/* Aged green paper: a visible fine grain over soft stains and darkened edges. */
 .front {
-  background-color: var(--sage-200);
+  background-color: var(--avocado);
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .35 0 0 0 0 .25 0 0 0 .1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
-    linear-gradient(160deg, #d0dac3 0%, #bccaab 55%, #adbe9b 100%);
+    url("Assets/paper-texture.png"),
+    /* aged look: darker, slightly stained edges and a few soft blotches */
+    radial-gradient(ellipse at 50% 45%, rgba(60, 50, 10, 0) 50%, rgba(60, 50, 10, .3) 100%),
+    radial-gradient(circle at 18% 22%, rgba(255, 250, 210, .1), rgba(255, 250, 210, 0) 35%),
+    radial-gradient(circle at 80% 78%, rgba(60, 45, 10, .1), rgba(60, 45, 10, 0) 38%),
+    linear-gradient(160deg, var(--env-light) 0%, var(--avocado) 55%, var(--env-dark) 100%);
+  background-size: 220px 220px, auto, auto, auto, auto;
 }
 
-.stamp {
-  position: absolute;
-  top: 7%;
-  right: 6%;
-  width: 15%;
-  transform: rotate(3deg);
-}
-
-.postmark {
-  position: absolute;
-  top: 9%;
-  right: 13%;
-  width: 34%;
-  color: rgba(62, 76, 56, .38);
-  transform: rotate(-8deg);
-}
-
-.front-text {
-  position: absolute;
-  left: 8%;
-  right: 8%;
-  top: 40%;
-  text-align: center;
-}
-
+/* "Save the Date", centred, printed on the paper */
 .front-script {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: center;
   font-family: var(--font-script);
-  font-size: calc(var(--w) * .15);
-  line-height: 1.05;
-  color: var(--ink);
-  text-shadow: 0 1px 0 rgba(255, 255, 245, .35);
-}
-
-.front-sub {
-  margin-top: .5em;
-  font-size: max(13px, calc(var(--w) * .043));
-  font-style: italic;
-  letter-spacing: .04em;
-  color: var(--sage-700);
+  font-size: calc(var(--w) * .125);
+  line-height: 1.1;
+  color: #3e4c38;   /* deep garden green */
+  text-shadow: 0 1px 0 rgba(255, 255, 240, .35);
 }
 
 /* Invisible full-face button: the tap target for flipping */
@@ -252,19 +231,17 @@ p, h1 { margin: 0; }
 
 /* 6. BACK FACE ============================================================ */
 .back {
-  /* What you see inside the envelope: the floral liner, a little darker at
-     the top where the flap shades it. Tile = 10% of the envelope width so it
-     matches the liner printed on the inside of the flap. */
-  background-color: #8fa27c;
+  /* What you see inside the envelope: the painted garden liner, shaded at the
+     top where the flap overhangs it. The liner image is 1 × 1.1 envelope-widths:
+     its top 0.4 is printed on the inside of the flap, so here it's shifted up
+     by that much to continue seamlessly across the fold. */
+  background-color: var(--avocado);
   background-image:
-    linear-gradient(to bottom, rgba(40, 55, 30, .35), rgba(40, 55, 30, 0) 45%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 10 10'%3E%3Crect width='10' height='10' fill='%238fa27c'/%3E%3Cpath d='M5 2C3.6 3.4 3.6 5 5 6.4C6.4 5 6.4 3.4 5 2Z' fill='rgba(251,247,236,.28)'/%3E%3Ccircle cx='0' cy='8.5' r='.7' fill='rgba(236,212,154,.45)'/%3E%3Ccircle cx='10' cy='8.5' r='.7' fill='rgba(236,212,154,.45)'/%3E%3C/svg%3E");
-  background-size: auto, calc(var(--w) * .1) calc(var(--w) * .1);
-  /* Perspective for the flap's rotateX. The back stays transform-style: flat,
-     so the flap is drawn in 3D and then flattened onto this face — no nested
-     3D context for Safari to flicker over. */
-  -webkit-perspective: 900px;
-  perspective: 900px;
+    linear-gradient(to bottom, rgba(30, 50, 25, .3), rgba(30, 50, 25, 0) 45%),
+    url("Assets/liner.jpg");
+  background-size: auto, var(--w) calc(var(--w) * 1.1);
+  background-position: 0 0, 0 calc(var(--w) * -.4);
+  background-repeat: no-repeat;
   cursor: pointer;
 }
 
@@ -276,8 +253,11 @@ p, h1 { margin: 0; }
   position: absolute;
   top: 4%;
   left: 4%;
+  /* Fixed shape: a letter that is always 92% of the envelope's width and a set
+     .82 × that width tall, however the envelope is sized. It is taller than the
+     envelope's opening, so it starts scaled down inside (see .letter-card). */
   width: 92%;
-  height: 92%;
+  height: calc(var(--w) * .82);
   z-index: 3;
   /* step 2: comes forward and settles down in front of the envelope */
   transition: transform var(--dur-settle) cubic-bezier(.3, 1.15, .45, 1);
@@ -290,12 +270,14 @@ p, h1 { margin: 0; }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 5% 7%;
+  padding: 8% 8%;
   text-align: center;
+  /* Starts small enough to sit inside the envelope, grows to full size as it lifts out */
+  transform-origin: 50% 0;
+  transform: translateY(0) scale(.75);
   background-color: var(--paper);
-  /* same paper grain as the envelope, plus a faint warm vignette */
+  /* smooth cream paper with a faint warm vignette (the texture is just for the envelope) */
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .35 0 0 0 0 .25 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
     radial-gradient(ellipse at center, rgba(251, 247, 236, 0) 55%, rgba(226, 210, 172, .45) 100%);
   border-radius: 2px;
   box-shadow: 0 1px 3px rgba(30, 40, 25, .2);
@@ -306,60 +288,55 @@ p, h1 { margin: 0; }
     box-shadow var(--dur-settle) ease;
 }
 
-/* Thin brass border inset from the card edge */
+/* Thin avocado border inset from the card edge */
 .letter-card::before {
   content: "";
   position: absolute;
   top: 5px; right: 5px; bottom: 5px; left: 5px;
-  border: 1px solid rgba(184, 145, 79, .55);
+  border: 1px solid rgba(137, 132, 51, .5);
   border-radius: 1px;
   pointer-events: none;
 }
 
-/* Letter typography — sizes scale with the envelope so it always fits */
+/* Letter typography — sizes scale with the envelope so it always fits.
+   Vertical rhythm comes from the margins below. */
 .eyebrow {
   font-size: max(10px, calc(var(--w) * .034));
   font-weight: 600;
   letter-spacing: .28em;
   text-transform: uppercase;
-  color: var(--brass-dk);
+  color: var(--accent);
   padding-left: .28em;          /* balances the trailing letter-spacing */
 }
 
 .names {
-  margin: .22em 0 0;
+  margin: .55em 0 .1em;
   font-family: var(--font-script);
   font-weight: normal;
-  font-size: calc(var(--w) * .15);
-  line-height: 1.1;
-  color: var(--ink);
+  font-size: calc(var(--w) * .118);
+  line-height: 1.15;
+  white-space: nowrap;
+  color: var(--dk-green);
 }
 
 .sprig {
   display: block;
   width: 36%;
-  margin: .1em auto .35em;
-  color: var(--brass);
+  margin: 1.1em auto 1.3em;
+  color: var(--accent);
 }
 
 .date {
-  font-size: max(14px, calc(var(--w) * .056));
+  font-size: max(15px, calc(var(--w) * .06));
   font-weight: 600;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  padding-left: .12em;
+  letter-spacing: .18em;
+  padding-left: .18em;
 }
 
 .location {
-  margin-top: .25em;
-  font-size: max(13px, calc(var(--w) * .046));
+  margin-top: 1em;
+  font-size: max(13px, calc(var(--w) * .047));
   font-style: italic;
-}
-
-.extra {
-  margin-top: .45em;
-  font-size: max(12px, calc(var(--w) * .04));
-  color: var(--sage-700);
 }
 
 /* --- Pocket ---------------------------------------------------------------- */
@@ -382,6 +359,9 @@ p, h1 { margin: 0; }
   height: 57.142857%;           /* 40 / 70 of the envelope height */
   z-index: 5;
   transform-origin: 50% 0;      /* hinged along the top edge */
+  /* perspective is part of the flap's own transform, so the back face needn't
+     be a 3D container (a nested 3D context here is what Safari trips over) */
+  transform: perspective(900px) rotateX(0deg);
   transition: transform var(--dur-flap) cubic-bezier(.4, 0, .2, 1) var(--delay-flap);
   will-change: transform;
 }
@@ -405,8 +385,8 @@ p, h1 { margin: 0; }
   left: 50%;
   top: 55%;                     /* sits on the tip of the flap */
   z-index: 6;
-  width: calc(var(--w) * .21);
-  height: calc(var(--w) * .21);
+  width: calc(var(--w) * .24);
+  height: calc(var(--w) * .24);
   min-width: 56px;              /* comfortable tap target on small screens */
   min-height: 56px;
   margin: 0;
@@ -449,9 +429,9 @@ p, h1 { margin: 0; }
 /* 7. OPEN SEQUENCE STATES ================================================= */
 /* script.js adds these classes to .stage in order. */
 
-/* Seal tapped: seal breaks away, flap swings open, scene eases down
-   to make room for the letter above the envelope. */
-.is-opening .scene { transform: translateY(calc(var(--h) * .3)); }
+/* Seal tapped: seal breaks away, flap swings open, and the scene eases down
+   to make room for the letter lifting out above the envelope. */
+.is-opening .scene { transform: translateY(calc(var(--h) * .5)); }
 
 .is-opening .seal {
   opacity: 0;
@@ -459,7 +439,7 @@ p, h1 { margin: 0; }
   pointer-events: none;
 }
 
-.is-opening .flap { transform: rotateX(180deg); }
+.is-opening .flap { transform: perspective(900px) rotateX(180deg); }
 
 .is-opening .flap-outer {
   opacity: 0;
@@ -470,12 +450,20 @@ p, h1 { margin: 0; }
   transition: opacity 0s linear var(--flap-swap);
 }
 
-/* Flap fully open: tuck it behind the letter, and slide the letter up */
+/* Flap fully open: tuck it behind the letter, and slide the letter up.
+   -108% lifts the card's bottom edge just clear of the envelope's top edge,
+   so nothing pokes through the pocket when it jumps to the front next. */
 .is-flap-open .flap { z-index: 2; }
-.is-flap-open .letter-card { transform: translateY(-88%); }
+.is-flap-open .letter-card { transform: translateY(-108%) scale(1); }
 
-/* Letter clear of the pocket: bring it in front and let it settle */
-.is-letter-out .letter { z-index: 7; transform: translateY(40%); }
+/* Letter clear of the envelope: bring it in front and let it settle back
+   down (net -48%: overlapping the pocket, with the flap peeking above),
+   while the scene rises a little to re-centre. */
+.is-letter-out .letter { z-index: 7; transform: translateY(60%); }
+.is-letter-out .scene {
+  transform: translateY(calc(var(--h) * .3));
+  transition-duration: var(--dur-settle);
+}
 .is-letter-out .letter-card {
   box-shadow: 0 14px 30px rgba(30, 40, 25, .32), 0 3px 8px rgba(30, 40, 25, .2);
 }
@@ -485,28 +473,29 @@ p, h1 { margin: 0; }
 /* 8. HINT, MOTES, FOCUS, NOSCRIPT ========================================= */
 .hint {
   position: absolute;
-  left: 50%;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
-  transform: translateX(-50%);
-  max-width: calc(100% - 32px);
-  padding: 8px 20px;
-  border-radius: 999px;
-  background: rgba(251, 247, 236, .8);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  box-shadow: 0 2px 10px rgba(30, 40, 25, .18);
-  font-size: 18px;
+  left: 0;
+  right: 0;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 22px);
+  padding: 0 16px;
+  text-align: center;
+  font-size: 21px;
   font-style: italic;
-  white-space: nowrap;
-  color: var(--ink);
+  letter-spacing: .02em;
+  color: #fffdf6;
+  /* soft glow, plus a faint dark edge so it reads over light patches too */
+  text-shadow:
+    0 0 6px rgba(255, 250, 225, .85),
+    0 0 16px rgba(255, 245, 210, .55),
+    0 1px 3px rgba(25, 28, 10, .55);
   pointer-events: none;
   transition: opacity 400ms ease;
-  animation: hint-breathe 3s ease-in-out infinite;
+  animation: hint-pulse 2.8s ease-in-out infinite;
 }
 .hint.is-hidden { opacity: 0; animation: none; }
-@keyframes hint-breathe {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: .72; }
+/* gentle scale up and back */
+@keyframes hint-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.07); }
 }
 
 /* Floating firefly motes (created by script.js) */
@@ -570,10 +559,9 @@ p, h1 { margin: 0; }
   background: var(--paper);
   box-shadow: 0 14px 30px rgba(30, 40, 25, .32);
 }
-.noscript-card .names { font-size: 48px; }
+.noscript-card .names { font-size: 44px; }
 .noscript-card .date  { font-size: 20px; }
 .noscript-card .location { font-size: 18px; }
-.noscript-card .extra { font-size: 16px; }
 
 
 /* 9. REDUCED MOTION ======================================================= */
